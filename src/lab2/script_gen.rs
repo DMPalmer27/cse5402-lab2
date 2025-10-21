@@ -14,37 +14,7 @@ const CHARACTER_FILE: usize = 1;
 const CONFIG_LINE_TOKENS: usize = 2;
 const MIN_CONFIG_LINES: usize = 2;
 
-// This function takes as parameters a mutable reference to a play object, a reference to the
-// line that will be added to the play, and a reference to a string that contains the character who
-// is speaking.
-// It splits the unparsed line into its line number and content which, if successful, then results
-// in the line being added to the play. Otherwise, if the first token is not a number and whinge
-// mode is on the program prints a complaint message without adding the line. If any other call fails it is due to the
-// presence of whitespace so the line is not added and the function runs successfully. 
-fn add_script_line(play: &mut declarations::Play, unparsed_line: &String, char_part_name: &String) {
-    if unparsed_line.len() > 0 {
-        if let Some((first_token, rest)) = unparsed_line.split_once(char::is_whitespace) {
-            let first_token_trim = first_token.trim();
-            let rest_trim = rest.trim();
 
-            match first_token_trim.parse::<usize>() {
-                Ok(num) => play.push((num, char_part_name.clone(), rest_trim.to_string())),
-                Err(_) => {
-                    use std::sync::atomic::Ordering;
-                    if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                        eprintln!("Warning: {} does not contain a valid usize value", first_token_trim);
-                    }
-                },
-            }
-
-        } else {
-            use std::sync::atomic::Ordering;
-            if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                eprintln!("Warning: line contains only a single token and is invalid");
-            }
-        }
-    }
-}
 
 // This function is used to open and read lines from a file. It takes as parameters a string
 // reference that

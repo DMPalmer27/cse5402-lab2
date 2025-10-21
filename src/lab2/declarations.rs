@@ -1,7 +1,5 @@
 //This file includes types, constants, and static variables used throughout the program
 
-pub type Play = Vec<(usize, String, String)>; // (line number, character, line)
-
 pub const MIN_ARGS: usize = 2;
 pub const MAX_ARGS: usize = 3;
 pub const PROG_NAME: usize = 0;
