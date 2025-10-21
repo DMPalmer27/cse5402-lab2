@@ -1,7 +1,9 @@
-pub mod lab1;
+pub mod lab2;
 
 use std::env;
-use lab1::declarations;
+use lab2::declarations;
+
+const EMPTY: usize = 0;
 
 // This function is called whenver the program is ran with improper command line arguments and it
 // prints a message telling the user how to run the program
@@ -42,7 +44,7 @@ fn parse_args(name: &mut String) -> Result<(), u8> {
 // spacing when characters begin speaking
 fn recite(title: &String, play: &declarations::Play) {
     println!("Play: {}", title);
-    if play.len() == 0 {
+    if play.len() == EMPTY{
         println!("Play does not contain any valid lines");
     } else {
         let mut cur_speaker: &str = "";
@@ -74,7 +76,7 @@ fn main() -> Result<(), u8>  {
     let mut play_title: String = Default::default();
     let mut play: declarations::Play = Default::default();
 
-    if let Err(e) = lab1::script_gen::script_gen(&config_file, &mut play_title, &mut play) {
+    if let Err(e) = lab2::script_gen::script_gen(&config_file, &mut play_title, &mut play) {
         return Err(e);
     }
 

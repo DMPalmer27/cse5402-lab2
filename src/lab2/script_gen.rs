@@ -13,7 +13,6 @@ const CHARACTER_NAME: usize = 0;
 const CHARACTER_FILE: usize = 1;
 const CONFIG_LINE_TOKENS: usize = 2;
 const MIN_CONFIG_LINES: usize = 2;
-const TEST_APPEND: &str = "test_files/";
 
 // This function takes as parameters a mutable reference to a play object, a reference to the
 // line that will be added to the play, and a reference to a string that contains the character who
@@ -33,7 +32,7 @@ fn add_script_line(play: &mut declarations::Play, unparsed_line: &String, char_p
                 Err(_) => {
                     use std::sync::atomic::Ordering;
                     if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                        println!("Warning: {} does not contain a valid usize value", first_token_trim);
+                        eprintln!("Warning: {} does not contain a valid usize value", first_token_trim);
                     }
                 },
             }
@@ -41,7 +40,7 @@ fn add_script_line(play: &mut declarations::Play, unparsed_line: &String, char_p
         } else {
             use std::sync::atomic::Ordering;
             if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                println!("Warning: line contains only a single token and is invalid");
+                eprintln!("Warning: line contains only a single token and is invalid");
             }
         }
     }
@@ -57,10 +56,9 @@ fn add_script_line(play: &mut declarations::Play, unparsed_line: &String, char_p
 // This function returns a Result type that is an error if a file could not be opened or read from,
 // and success otherwise. 
 fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>) -> Result<(), u8> {
-    let appended_path = format!("{}{}", TEST_APPEND, file_name);
-    match File::open(appended_path) {
+    match File::open(file_name) {
         Err(_) => {
-            println!("Error: script generation failed because the file {} could not be opened", file_name);
+            eprintln!("Error: script generation failed because the file {} could not be opened", file_name);
             return Err(declarations::ERR_SCRIPT_GEN);
         },
         Ok(f) => {
@@ -70,7 +68,7 @@ fn grab_trimmed_file_lines(file_name: &String, file_lines: &mut Vec<String>) -> 
                 s.clear();
                 match reader.read_line(&mut s) {
                     Err(_) => {
-                        println!("Error: script generation failed because line could not be read");
+                        eprintln!("Error: script generation failed because line could not be read");
                         return Err(declarations::ERR_SCRIPT_GEN);
                     },
                     Ok(bytes_read) => {
@@ -114,9 +112,10 @@ fn add_config(line: &String, play_config: &mut PlayConfig) {
     if delimited_tokens.len() != CONFIG_LINE_TOKENS {
         use std::sync::atomic::Ordering;
         if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-            println!("Warning: There were not exactly two distinct tokens in the line {}", line);
+            eprintln!("Warning: There were not exactly two distinct tokens in the line {}", line);
         }
-    } else {
+    } 
+    if delimited_tokens.len() >= CONFIG_LINE_TOKENS {
         play_config.push((
                 delimited_tokens[CHARACTER_NAME].to_string(), 
                 delimited_tokens[CHARACTER_FILE].to_string()
@@ -134,7 +133,7 @@ fn read_config(config_file_name: &String, title: &mut String, play_config: &mut 
     let mut lines: Vec<String> = Vec::new();
     grab_trimmed_file_lines(config_file_name, &mut lines)?;
     if lines.len() < MIN_CONFIG_LINES {
-        println!("Error: the config file must contain at least one character and associated text file");
+        eprintln!("Error: the config file must contain at least one character and associated text file");
         return Err(declarations::ERR_SCRIPT_GEN);
     }
     for (i, line) in lines.iter().enumerate() {
