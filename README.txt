@@ -17,3 +17,8 @@ The approach that I took to refactor my code into structs and their implementati
 I then tested my program using Lab1 testing files to confirm that output is the exact same and that I just had an implementation for Lab1 which uses structs and implementations.
 
 
+Return Wrapper:
+
+My implementation of the Return Wrapper is incredibly simple. I started by just following the instructions which declared the struct and the termination implementation for it. The only design choice I made in was in the new function declaring the struct which I had take a single parameter of Result type and I match on the Ok and Err cases to create a struct with 0 as success for an Ok and a struct with the error value in the case of error.
+
+I then tested my implementation by running it in ways that would generate different return values. This included a successful run, a run with an incorrect command line, and a run with files that would not open. Each case succeeded. On success no error code was printed and echo $? gave 0. On command line fail the error code 1 was printed and echo $? also gave 1. Finally, on file open fail the error code 2 was printed and echo $? gave 2. These are all intended behavior. 
