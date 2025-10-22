@@ -13,6 +13,7 @@ pub mod lab2;
 use std::env;
 use lab2::declarations;
 use lab2::play::Play;
+use lab2::return_wrapper::ReturnWrapper;
 
 
 // This function is called whenver the program is ran with improper command line arguments and it
@@ -52,19 +53,19 @@ fn parse_args(name: &mut String) -> Result<(), u8> {
 
 // The main function executes the program which includes retrieving command line arguments,
 // constructing the play, and printing the play.  
-fn main() -> Result<(), u8>  {
+fn main() -> ReturnWrapper {
     let mut config_file: String = Default::default();
 
     if let Err(e) = parse_args(&mut config_file){
-        return Err(e);
+        return ReturnWrapper::new(Err(e));
     }
 
     let mut play = Play::new();
     if let Err(e) = play.prepare(&config_file){
-        return Err(e);
+        return ReturnWrapper::new(Err(e));
     }
 
     play.recite();
     
-    Ok(())
+    ReturnWrapper::new(Ok(()))
 }
