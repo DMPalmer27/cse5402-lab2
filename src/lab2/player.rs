@@ -9,10 +9,12 @@
  *
  */
 
+use std::cmp::Ordering;
 
 use super::declarations;
 
 const EMPTY: usize = 0;
+const FIRST_LINE: usize = 0;
 
 
 pub type PlayLines = Vec<(usize, String)>; // (line number, string)
@@ -93,6 +95,51 @@ impl Player {
             Some(*line_num)
         } else {
             None
+        }
+    }
+}
+
+
+impl PartialEq for Player {
+    fn eq(&self, other: &Self) -> bool {
+        let self_silent = self.lines.len() == 0;
+        let other_silent = other.lines.len() == 0;
+        if self_silent && other_silent {
+            true
+        } else if self_silent || other_silent {
+            false
+        } else {
+            let (self_first, _) = self.lines[FIRST_LINE];
+            let (other_first, _) = other.lines[FIRST_LINE];
+            self_first == other_first
+        }
+    }
+}
+
+
+impl Eq for Player{}
+
+// The ordering is complete, so partial ordering should just wrap the result of cmp in Some
+impl PartialOrd for Player {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Player {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let self_silent = self.lines.len() == 0;
+        let other_silent = other.lines.len() == 0;
+
+        match (self_silent, other_silent) {
+            (true, true) => Ordering::Equal,
+            (true, false) => Ordering::Less,
+            (false, true) => Ordering::Greater,
+            (false, false) => {
+                let (self_first, _) = self.lines[FIRST_LINE];
+                let (other_first, _) = other.lines[FIRST_LINE];
+                self_first.cmp(&other_first);
+            },
         }
     }
 }
