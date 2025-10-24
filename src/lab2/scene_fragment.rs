@@ -1,23 +1,19 @@
 /*
  * Author: Daniel Palmer
  * Email: d.m.palmer@wustl.edu
- * File: play.rs
- * Summary: This file contains the Play struct and its implementation. A Play is the
- * type used for coordinating the script generation of a scene. It handles the 
- * individual characters as instances of Player structs and is primarily used to 
- * recite the play.
+ * File: scene_fragment.rs
+ * Summary:
  *
  */
 
+use std::collections::HashSet;
 
 use super::player::Player;
-use super::scene_fragment::SceneFragment;
 use super::declarations;
 
 
-type ScriptConfig = Vec<(bool, String)>;
+type PlayConfig = Vec<(String, String)>; // (character name, associated text file)
 
-const SCENE_INDICATOR: &str = "[SCENE]";
 const TITLE_INDEX: usize = 0;
 const CHARACTER_NAME: usize = 0;
 const CHARACTER_FILE: usize = 1;
@@ -27,31 +23,31 @@ const FIRST_LINE: usize = 0;
 const EXPECTED_NUM_SPEAKERS: usize = 1;
 
 
-pub struct Play {
-    fragments: Vec<SceneFragment>,
+pub struct SceneFragment {
+    scene_title: String,
+    characters: Vec<Player>,
 }
 
 
-impl Play {
-    pub fn new() -> Self {
+impl SceneFragment {
+    pub fn new(title: &str) -> Self {
         Self {
-            fragments: Vec::new(),
+            scene_title: title.to_string();,
+            characters: Vec::new(),
         }
     }
 
-    // This function processes a passed in ScriptConfig. For each item in the ScriptConfig if it contains a scene title it updates the title and otherwise creates a new SceneFragment, adds it to the Play's fragments, and prepares the fragment with its associated file. If it fails, the error is propagated out and otherwise Ok(()) is returned
-    fn process_config(&mut self, script_config: &ScriptConfig) -> Result<(), u8> {
-        let mut title  = String::new();
-        for tup in script_config {
+    // This function processes a passed in PlayConfig. For each item in the PlayConfig it creates a
+    // Player, adds it to the Play's characters, and prepares the character with its associated
+    // text file. 
+    // If it fails the error is propagated out and otherwise Ok(()) is returned
+    fn process_config(&mut self, play_config: &PlayConfig) -> Result<(), u8> {
+        for tup in play_config {
             match tup {
-                (true, text) => { //Text is a new title
-                    title = text.clone();
-                },
-                (false, text) => {
-                    let mut frag = SceneFragment::new(&title);
-                    frag.prepare(&text)?;
-                    self.fragments.push(frag);
-                    title = "".to_string();
+                (name, file) => {
+                    let mut character = Player::new(&name);
+                    character.prepare(&file)?;
+                    self.characters.push(character);
                 }
             }
         }
@@ -59,17 +55,10 @@ impl Play {
     }
 
     // This function splits the passed in line into two separate tokens and adds them as a tuple to
-    // the passed in ScriptConfig. If the tokens could not be properly extracted and whinge mode is
+    // the passed in PlayConfig. If the tokens could not be properly extracted and whinge mode is
     // on it complains, but if there were at least two tokens (the minimum amount) it adds the
     // line.
-    fn add_config(line: &str, play_config: &mut ScriptConfig) {
-        if let Some((first_token, rest)) = unparsed_line.split_once(char::is_whitespace){
-            let first_token_trim = first_token.trim();
-            let rest_trim = rest.trim();
-            match (first_token_trim, rest_trim) {
-
-            }
-        }
+    fn add_config(line: &str, play_config: &mut PlayConfig) {
         let delimited_tokens: Vec<&str> = line.split_whitespace().collect();
         if delimited_tokens.len() != CONFIG_LINE_TOKENS {
             use std::sync::atomic::Ordering;
@@ -90,7 +79,7 @@ impl Play {
     // This function reads a given config file name and populates the passed in title and
     // play_config with the relevant information from this config file. It propagates any errors
     // out and otherwise returns Ok(())
-    fn read_config(config_file_name: &str, title: &mut String, play_config: &mut ScriptConfig) -> Result<(), u8> {
+    fn read_config(config_file_name: &str, title: &mut String, play_config: &mut PlayConfig) -> Result<(), u8> {
         let mut lines: Vec<String> = Vec::new();
         declarations::grab_trimmed_file_lines(config_file_name, &mut lines)?;
         if lines.len() < MIN_CONFIG_LINES {
@@ -111,9 +100,10 @@ impl Play {
     // This method does the script generation for a given scene. It uses the above functions to
     // populate the self Play with associated information.
     pub fn prepare(&mut self, config_file_name: &str) -> Result<(), u8> {
-        let mut play_config: ScriptConfig = Default::default();
+        let mut play_config: PlayConfig = Default::default();
         Self::read_config(config_file_name, &mut self.scene_title, &mut play_config)?;
         self.process_config(&play_config)?;
+        self.characters.sort();
         Ok(())
     }
 
@@ -121,7 +111,6 @@ impl Play {
     // This method prints the play line by line by finding the player that has the next line and
     // printing it out.
     pub fn recite(&mut self) {
-        println!("{}", self.scene_title);
         let mut next_line_number = FIRST_LINE;
         let mut cur_speaker = String::new();
         loop {
@@ -161,5 +150,47 @@ impl Play {
             next_line_number += 1;
         }
     }
+
+    pub fn enter(&self, other: &Self) {
+        if !self.scene_title.trim().is_empty(){
+            println!("{}", self.scene_title);
+        }
+        let other_names: HashSet<&str> = other.characters.iter()
+            .map(|c| &c.name)
+            .collect();
+        for name in self.characters.iter().map(|c| c.name.as_str()) {
+            if !other_names.contains(name) {
+                println!("[Enter {}]", name);
+            }
+        }
+        
+    }
+
+    pub fn enter_all(&self) {
+        if !self.scene_title.trim().is_empty(){
+            println!("{}", self.scene_title);
+        }
+        for name in self.characters.iter().map(|c| c.name.as_str()) {
+            println!("[Enter {}]", name);
+        }
+    }
+
+    pub fn exit(&self, other: &Self) {
+        let other_names: HashSet<&str> = other.characters.iter()
+            .map(|c| &c.name)
+            .collect();
+        for name in self.characters.iter().rev().map(|c| c.name.as_str()) {
+            if !other_names.contains(name) {
+                println!("[Exit {}]", name);
+            }
+        }
+    }
+
+    pub fn exit_all(&self) {
+        for name in self.characters.iter().rev().map(|c| c.name.as_str()) {
+            println!("[Exit {}]", name);
+        }
+    }
+
 
 }
