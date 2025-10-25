@@ -101,22 +101,18 @@ impl Play {
 
 
 
-    // This function reads a given config file name and populates the passed in title and
-    // play_config with the relevant information from this config file. It propagates any errors
+    // This function reads a given script file name and populates the passed in 
+    // script_config with the relevant information from this config file. It propagates any errors
     // out and otherwise returns Ok(())
-    fn read_config(config_file_name: &str, title: &mut String, play_config: &mut ScriptConfig) -> Result<(), u8> {
+    fn read_config(script_file_name: &str, script_config: &mut ScriptConfig) -> Result<(), u8> {
         let mut lines: Vec<String> = Vec::new();
-        declarations::grab_trimmed_file_lines(config_file_name, &mut lines)?;
-        if lines.len() < MIN_CONFIG_LINES {
-            eprintln!("Error: the config file must contain at least one character and associated text file");
+        declarations::grab_trimmed_file_lines(script_file_name, &mut lines)?;
+        if lines.len() == EMPTY {
+            eprintln!("Error: the script gen file must contain at least 1 line");
             return Err(declarations::ERR_SCRIPT_GEN);
         }
-        for (i, line) in lines.iter().enumerate() {
-            if i == TITLE_INDEX {
-                *title = line.clone();
-            } else {
-                Self::add_config(line, play_config);
-            }
+        for line in &lines {
+            Self::add_config(line, script_config);
         }
         Ok(())
     }
