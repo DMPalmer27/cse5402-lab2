@@ -24,15 +24,9 @@ const FIRST_TOKEN: usize = 0;
 const SECOND_TOKEN: usize = 1;
 const NEW_SCENE_BOOL: bool = true;
 const CONFIG_FILE_BOOL: bool = false;
+const FIRST_FRAGMENT: bool = 0;
 
 
-const TITLE_INDEX: usize = 0;
-const CHARACTER_NAME: usize = 0;
-const CHARACTER_FILE: usize = 1;
-const CONFIG_LINE_TOKENS: usize = 2;
-const MIN_CONFIG_LINES: usize = 2;
-const FIRST_LINE: usize = 0;
-const EXPECTED_NUM_SPEAKERS: usize = 1;
 
 
 pub struct Play {
@@ -118,13 +112,18 @@ impl Play {
     }
 
 
-    // This method does the script generation for a given scene. It uses the above functions to
+    // This method does the script generation for a given play. It uses the above functions to
     // populate the self Play with associated information.
-    pub fn prepare(&mut self, config_file_name: &str) -> Result<(), u8> {
-        let mut play_config: ScriptConfig = Default::default();
-        Self::read_config(config_file_name, &mut self.scene_title, &mut play_config)?;
-        self.process_config(&play_config)?;
-        Ok(())
+    pub fn prepare(&mut self, script_file_name: &str) -> Result<(), u8> {
+        let mut script_config: ScriptConfig = Default::default();
+        Self::read_config(script_file_name, &mut script_config)?;
+        self.process_config(&script_config)?;
+        if self.fragments.len() != EMPTY && !self.fragments[FIRST_FRAGMENT].title.is_empty() {
+            Ok(())
+        } else {
+            eprintln!("Error: script generation failed");
+            Err(declarations::ERR_SCRIPT_GEN)
+        }
     }
 
 
