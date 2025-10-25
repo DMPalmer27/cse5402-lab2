@@ -18,6 +18,14 @@ use super::declarations;
 type ScriptConfig = Vec<(bool, String)>;
 
 const SCENE_INDICATOR: &str = "[SCENE]";
+const EMPTY: usize = 0;
+const SINGLE_TOKEN: usize = 1;
+const FIRST_TOKEN: usize = 0;
+const SECOND_TOKEN: usize = 1;
+const NEW_SCENE_BOOL: bool = true;
+const CONFIG_FILE_BOOL: bool = false;
+
+
 const TITLE_INDEX: usize = 0;
 const CHARACTER_NAME: usize = 0;
 const CHARACTER_FILE: usize = 1;
@@ -58,31 +66,37 @@ impl Play {
         Ok(())
     }
 
-    // This function splits the passed in line into two separate tokens and adds them as a tuple to
-    // the passed in ScriptConfig. If the tokens could not be properly extracted and whinge mode is
-    // on it complains, but if there were at least two tokens (the minimum amount) it adds the
-    // line.
-    fn add_config(line: &str, play_config: &mut ScriptConfig) {
-        if let Some((first_token, rest)) = unparsed_line.split_once(char::is_whitespace){
-            let first_token_trim = first_token.trim();
-            let rest_trim = rest.trim();
-            match (first_token_trim, rest_trim) {
-
-            }
+    // This function separates the tokens in the passed in line, creating a new scene if the first
+    // token is [scene] and there is a scene title after. Otherwise, treats the first token as a
+    // config file. In either success case an element containing the info is pushed to the passed
+    // in ScriptConfig, and in the event of an empty line or [scene] is the first token with
+    // nothing after nothing is pushed.
+    fn add_config(line: &str, script_config: &mut ScriptConfig) {
+        let trimmed = line.trim();
+        let tokens: Vec<&str> = trimmed.split_whitespace().collect();
+        if tokens.len() == EMPTY {
+            return;
         }
-        let delimited_tokens: Vec<&str> = line.split_whitespace().collect();
-        if delimited_tokens.len() != CONFIG_LINE_TOKENS {
+        if tokens.len() == SINGLE_TOKEN && tokens[FIRST_TOKEN] == SCENE_INDICATOR {
             use std::sync::atomic::Ordering;
-            if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                eprintln!("Warning: There were not exactly two distinct tokens in the line {}", line);
+            if declarations::WHINGE_ON.load(Ordering::SeqCst){
+                eprintln!("Warning: scene identified but has no title so has not been added");
+            }
+            return;
+        }
+        if tokens[FIRST_TOKEN] == SCENE_INDICATOR {
+            let rest = tokens[SECOND_TOKEN..].join(" ");
+            script_config.push((NEW_SCENE_BOOL, rest));
+        } else {
+            script_config.push((CONFIG_FILE_BOOL, tokens[FIRST_TOKEN].to_string()));
+            if tokens.len() != SINGLE_TOKEN{
+                use std::sync::atomic::Ordering;
+                if declarations::WHINGE_ON.load(Ordering::SeqCst) {
+                    eprintln!("Warning: there are additional tokens in the line \"{}\" that is being treated as a config file name", line);
+                }
             }
         }
-        if delimited_tokens.len() >= CONFIG_LINE_TOKENS {
-            play_config.push((
-                    delimited_tokens[CHARACTER_NAME].to_string(),
-                    delimited_tokens[CHARACTER_FILE].to_string()
-                    ));
-        }
+            
     }
 
 
