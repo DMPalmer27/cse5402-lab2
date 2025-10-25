@@ -25,6 +25,7 @@ const SECOND_TOKEN: usize = 1;
 const NEW_SCENE_BOOL: bool = true;
 const CONFIG_FILE_BOOL: bool = false;
 const FIRST_FRAGMENT: bool = 0;
+const ONE_FRAGMENT: usize = 1;
 
 
 
@@ -127,47 +128,27 @@ impl Play {
     }
 
 
-    // This method prints the play line by line by finding the player that has the next line and
-    // printing it out.
-    pub fn recite(&mut self) {
-        println!("{}", self.scene_title);
-        let mut next_line_number = FIRST_LINE;
-        let mut cur_speaker = String::new();
-        loop {
-            let min_line_number = match self.characters
-                .iter()
-                .filter_map(|c| c.next_line())
-                .min(){
-                Some(n) => n,
-                None => break,
-            };
-            
-            // Skip over any missing line numbers, complaining if whinge mode is on
-            while min_line_number > next_line_number {
-                use std::sync::atomic::Ordering;
-                if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                    eprintln!("Warning: missing line {}", next_line_number);
+    // This function prints the script by iterating over each scene fragment and printing
+    // everything required for it, including character entrances, exits, and lines.
+    pub fn recite(&mut self) { 
+        for (i, frag) in self.fragments.iter().enumerate(){
+            if i == FIRST_FRAGMENT {
+                frag.enter_all();
+                frag.recite();
+                if self.fragments.len() > ONE_FRAGMENT {
+                    frag.exit(&self.fragments[i+1]);
+                } else {
+                    frag.exit_all();
                 }
-                next_line_number += 1;
+            } else if i == self.fragments.len()-1 {
+                frag.enter(&self.fragments[i-1]);
+                frag.recite();
+                frag.exit_all();
+            } else {
+                frag.enter(&self.fragments[i-1]);
+                frag.recite();
+                frag.exit(&self.fragments[i+1]);
             }
-
-
-            let next_characters: Vec<&mut Player> = self.characters
-                .iter_mut()
-                .filter(|c| c.next_line() == Some(min_line_number))
-                .collect(); // Holds all characters who have a line which number is the minimum
-            if next_characters.len() != EXPECTED_NUM_SPEAKERS {
-                use std::sync::atomic::Ordering;
-                if declarations::WHINGE_ON.load(Ordering::SeqCst) {
-                    eprintln!("Warning: there are {} characters who have a line with number {}", next_characters.len(), min_line_number);
-                }
-            }
-            
-            for c in next_characters {
-                c.speak(&mut cur_speaker);
-            }
-            
-            next_line_number += 1;
         }
     }
 
